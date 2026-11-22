@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nosana Cost Guard — Dashboard</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, sans-serif; margin: 0; background: #0f1115; color: #e8e8e8; }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  p.sub { color: #9aa0a6; margin: 0 0 20px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .card { background: #1a1d24; border: 1px solid #2c313a; border-radius: 10px; padding: 14px; }
+  .card .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: .05em; color: #9aa0a6; }
+  .card .value { font-size: 1.5rem; font-weight: 700; margin-top: 4px; }
+  .card .note { font-size: 0.8rem; color: #9aa0a6; margin-top: 2px; }
+  .bar { height: 10px; background: #2c313a; border-radius: 5px; overflow: hidden; margin-top: 8px; }
+  .bar > div { height: 100%; background: #4caf7d; width: 0%; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid #2c313a; }
+  th { color: #9aa0a6; font-weight: 600; }
+  .stop { color: #ff8a80; font-weight: 700; }
+  .keep { color: #4caf7d; font-weight: 700; }
+  section { background: #1a1d24; border: 1px solid #2c313a; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+  section h2 { font-size: 1rem; margin: 0 0 10px; }
+  code { background: #0f1115; padding: 2px 5px; border-radius: 4px; }
+  .warn { color: #ffb74d; }
+  pre { background: #0f1115; padding: 12px; border-radius: 8px; overflow-x: auto; font-size: 0.8rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Nosana Cost Guard</h1>
+  <p class="sub">Budget guard for Nosana deployments — SIMPLE, replica 1, timeout, auto-stop on idle.</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="label">Credit budget</div>
+      <div class="value">$70.00</div>
+      <div class="note">Hackathon credits (Nosana claim)</div>
+    </div>
+    <div class="card">
+      <div class="label">Spent (sample)</div>
+      <div class="value" id="spent">$2.73</div>
+      <div class="note">From the dry-run audit log — not a real run</div>
+    </div>
+    <div class="card">
+      <div class="label">Remaining (sample)</div>
+      <div class="value" id="remaining">$67.27</div>
+      <div class="note">Budget minus sample spend</div>
+      <div class="bar"><div id="remaining-bar" style="width:96%"></div></div>
+    </div>
+    <div class="card">
+      <div class="label">Cheapest GPU ≥ 24 GB VRAM</div>
+      <div class="value">RTX 4090</div>
+      <div class="note">$0.40/h (Nov 2026 — verify on dashboard)</div>
+    </div>
+  </div>
+
+  <section>
+    <h2>Active rules</h2>
+    <table>
+      <tr><th>Rule</th><th>Value</th></tr>
+      <tr><td>Idle limit</td><td>Stop after 10 min idle</td></tr>
+      <tr><td>Spend cap</td><td>Stop above $2.00 per deployment</td></tr>
+      <tr><td>Strategy</td><td>SIMPLE enforced (Infinite flagged)</td></tr>
+      <tr><td>Replicas</td><td>1</td></tr>
+      <tr><td>Container timeout</td><td>45 min</td></tr>
+      <tr><td>Minimum VRAM</td><td>24 GB (qwen3:8b)</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>Recent decisions</h2>
+    <p id="log-status" class="warn">Showing the dry-run sample. Serve this folder with <code>python3 -m http.server</code> and re-run <code>guard.py --dry-run</code> to load the real <code>audit.log.jsonl</code>.</p>
+    <table>
+      <thead><tr><th>#</th><th>Deployment</th><th>Decision</th><th>Reason</th><th>Est. cost</th></tr></thead>
+      <tbody id="decisions">
+        <tr><td>1</td><td>ollama-test-01</td><td class="stop">STOP</td><td>idle 12 min &gt; 10 min limit</td><td>$0.23</td></tr>
+        <tr><td>2</td><td>ollama-test-02</td><td class="keep">KEEP</td><td>within limits</td><td>$0.10</td></tr>
+        <tr><td>3</td><td>ollama-test-03</td><td class="stop">STOP</td><td>strategy is Infinite (must be SIMPLE); spend $2.40 &gt; $2.00 cap</td><td>$2.40</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Status — honest</h2>
+    <p><strong>No live Nosana run yet.</strong> The numbers above are from
+    <code>guard.py --dry-run</code> sample data. The first real test
+    (30 minutes, Ollama <code>qwen3:8b</code>, RTX 4090) is a TODO in
+    <code>BENCHMARK.md</code>. Arweave upload of the audit log is
+    planned, not done — no transaction ID exists yet.</p>
+    <pre>python3 guard.py --check
+python3 guard.py --dry-run
+python3 verify.py   # expect: VERIFIED</pre>
+  </section>
+</main>
+<script>
+  // If served over HTTP (python3 -m http.server), try to load the real log.
+  // Opened as a plain file, fetch() fails and the embedded sample stays.
+  fetch('../audit.log.jsonl').then(function (r) {
+    if (!r.ok) throw new Error('no log');
+    return r.text();
+  }).then(function (text) {
+    var rows = text.trim().split('\n').filter(Boolean).map(JSON.parse);
+    if (!rows.length) return;
+    var spent = rows.reduce(function (s, e) { return s + (e.cost_usd_estimate || 0); }, 0);
+    var remaining = Math.max(0, 70 - spent);
+    document.getElementById('spent').textContent = '$' + spent.toFixed(2);
+    document.getElementById('remaining').textContent = '$' + remaining.toFixed(2);
+    document.getElementById('remaining-bar').style.width = (remaining / 70 * 100) + '%';
+    document.getElementById('log-status').textContent = 'Loaded ' + rows.length + ' entries from audit.log.jsonl (verify with python3 verify.py).';
+    document.getElementById('log-status').className = '';
+    document.getElementById('decisions').innerHTML = rows.map(function (e) {
+      var cls = e.decision === 'STOP' ? 'stop' : 'keep';
+      return '<tr><td>' + e.seq + '</td><td>' + e.deployment_id + '</td><td class="' + cls + '">' + e.decision + '</td><td>' + e.reason + '</td><td>$' + (e.cost_usd_estimate || 0).toFixed(2) + '</td></tr>';
+    }).join('');
+  }).catch(function () { /* keep the embedded sample */ });
+</script>
+</body>
+</html>

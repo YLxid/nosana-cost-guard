@@ -1,0 +1,3 @@
+# Nosana Cost Guard — no third-party dependencies.
+# guard.py and verify.py use only the Python standard library.
+# Python 3.10+ is required.

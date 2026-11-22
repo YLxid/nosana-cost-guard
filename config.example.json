@@ -1,0 +1,1 @@
+{"audit_log":"audit.log.jsonl","container_timeout_minutes":45,"credit_budget_usd":70.0,"enforce_simple":true,"gpu_price_usd_per_hour":0.4,"idle_minutes":10,"max_spend_usd":2.0,"min_vram_gb":24,"replica_count":1}

@@ -1,0 +1,17 @@
+# Local config (may contain paths / future credentials) — never commit.
+config.json
+
+# Audit logs are generated locally. Commit only curated samples, not live logs.
+audit.log.jsonl
+*.log.jsonl
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+.vscode/

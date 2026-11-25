@@ -86,7 +86,7 @@ Planned (not implemented yet):
 Requirements: Python 3.10+ only. No third-party packages.
 
 ```bash
-git clone https://github.com/vannyfriskaa-blip/nosana-cost-guard.git
+git clone https://github.com/YLxid/nosana-cost-guard.git
 cd nosana-cost-guard
 
 # 1. Check the configuration and the job definition — no credentials needed
